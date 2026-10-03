@@ -1,0 +1,1988 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#007AFF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="CRA Logbook">
+  <title>CRA 车辆日志 - Uber Driver Logbook</title>
+  <style>
+    :root {
+      --primary: #007AFF;
+      --primary-light: #E5F1FF;
+      --bg: #F2F2F7;
+      --card-bg: #FFFFFF;
+      --text: #1C1C1E;
+      --text-muted: #8E8E93;
+      --border: #E5E5EA;
+      --danger: #FF3B30;
+      --success: #34C759;
+      --warning: #FF9500;
+      --radius: 14px;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --primary: #0A84FF;
+        --primary-light: rgba(10, 132, 255, 0.15);
+        --bg: #000000;
+        --card-bg: #1C1C1E;
+        --text: #FFFFFF;
+        --text-muted: #8E8E93;
+        --border: #38383A;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      padding-top: calc(var(--safe-top) + 12px);
+      padding-bottom: calc(var(--safe-bottom) + 80px);
+      padding-left: 16px;
+      padding-right: 16px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    header {
+      margin-bottom: 16px;
+    }
+
+    .header-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Storage warning banner */
+    .storage-warning {
+      background: rgba(255, 149, 0, 0.12);
+      border: 1px solid var(--warning);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    /* Month Selector & Filter */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      background: var(--card-bg);
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .filter-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    select.month-select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      outline: none;
+      max-width: 132px;
+      height: 42px;
+      touch-action: manipulation;
+      cursor: pointer;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .stat-card.full-width {
+      grid-column: span 2;
+      background: linear-gradient(135deg, var(--primary), #0056b3);
+      color: white;
+    }
+
+    .stat-card.full-width .stat-label,
+    .stat-card.full-width .stat-sub {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      margin-top: 2px;
+      color: var(--text-muted);
+    }
+
+    /* Business rate progress bar */
+    .rate-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 5px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .rate-bar-fill {
+      height: 100%;
+      background: #FFFFFF;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+
+    /* Form Card */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group.row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-group.row > div {
+      flex: 1;
+      min-width: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* 16px font-size on form controls prevents iOS Safari auto-zoom on focus */
+    input, select {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.2s;
+      touch-action: manipulation;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    input[type="date"] {
+      min-height: 44px;
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .custom-address-input {
+      margin-top: 6px;
+      display: none;
+    }
+
+    optgroup {
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .uber-section {
+      background: var(--primary-light);
+      border: 1px dashed var(--primary);
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 10px;
+      margin-bottom: 12px;
+    }
+
+    /* Expense Items */
+    .expense-list {
+      margin-top: 8px;
+    }
+
+    .expense-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .expense-item select {
+      flex: 1.2;
+    }
+
+    .expense-item input {
+      flex: 1;
+    }
+
+    .btn-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 59, 48, 0.1);
+      color: var(--danger);
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      touch-action: manipulation;
+    }
+
+    .btn {
+      width: 100%;
+      height: 48px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.05s;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .btn:active {
+      opacity: 0.75;
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      height: 44px;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    /* Log List */
+    .log-item {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      gap: 8px;
+    }
+
+    .log-date {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .log-purpose {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .log-details {
+      font-size: 13px;
+      color: var(--text);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .log-details span {
+      color: var(--text-muted);
+    }
+
+    .log-expenses {
+      background: var(--bg);
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+
+    .log-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-sm {
+      background: var(--bg);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .btn-sm:active {
+      opacity: 0.7;
+    }
+
+    .btn-delete {
+      background: transparent;
+      color: var(--danger);
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .btn-delete:active {
+      opacity: 0.7;
+    }
+
+    /* Bottom Nav Bar / Print Hide */
+    .action-bar {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 10px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Settings Card */
+    .settings-body {
+      display: block;
+    }
+
+    .settings-arrow {
+      margin-left: auto;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+
+    .help-card ul {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.8;
+      padding-left: 18px;
+      margin-top: 6px;
+    }
+
+    .odo-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      min-height: 14px;
+    }
+
+    .odo-hint.warn {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    /* Print summary (screen hidden) */
+    .print-summary {
+      display: none;
+    }
+
+    /* iOS keyboard "Done" bar - shown ONLY while a keyboard input is focused on iOS */
+    .ios-done-bar {
+      display: none;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: 0 auto;
+      max-width: 500px;
+      padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+      z-index: 999;
+    }
+
+    .ios-done-bar button {
+      width: 100%;
+      height: 44px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    /* CRA Print Header */
+    .cra-header {
+      display: none;
+    }
+
+    /* Print Styles for CRA Submission */
+    @media print {
+      body {
+        background: white;
+        color: black;
+        max-width: 100%;
+        padding: 0;
+      }
+
+      .card, .action-bar, .filter-bar, .btn-secondary, .btn-icon, .btn-delete, .btn-sm, .log-actions, .rate-bar, .ios-done-bar, .storage-warning {
+        display: none !important;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .stat-card {
+        border: 1px solid #ccc;
+        box-shadow: none;
+        color: black !important;
+        background: none !important;
+      }
+
+      .stat-card.full-width .stat-label,
+      .stat-card.full-width .stat-sub {
+        color: #555 !important;
+      }
+
+      .log-item {
+        border: 1px solid #ccc;
+        box-shadow: none;
+        page-break-inside: avoid;
+        margin-bottom: 10px;
+      }
+
+      .cra-header {
+        display: block !important;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #000;
+      }
+
+      .print-summary {
+        display: block !important;
+        margin: 0 0 20px;
+        padding: 12px;
+        border: 1px solid #000;
+        page-break-inside: avoid;
+      }
+
+      .print-summary h3 {
+        font-size: 15px;
+        margin-bottom: 8px;
+      }
+
+      .print-summary table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      .print-summary td {
+        padding: 5px 8px;
+        border: 1px solid #999;
+      }
+
+      .print-summary td:first-child {
+        width: 45%;
+        color: #555;
+      }
+
+      .print-summary .statement {
+        margin-top: 10px;
+        font-size: 12px;
+      }
+
+      .print-summary .sig {
+        margin-top: 26px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+      }
+
+      .print-summary .sig span {
+        display: inline-block;
+        border-bottom: 1px solid #000;
+        width: 40%;
+        padding-bottom: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Shown when JavaScript does not run (e.g. iOS Files/Preview/Mail preview).
+       init() hides it at the end of a successful boot. Pure HTML/CSS so it works with JS disabled. -->
+  <div id="jsBlockedBanner" style="background:#FFF3E0;border:2px solid #FF9500;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-size:14px;line-height:1.7;color:#1C1C1E;">
+    <b>⚠️ 当前是文件预览模式，按钮无法使用</b><br>
+    iPhone 直接点开本地 HTML 文件时不会运行脚本（文件本身没坏）。请这样做：<br>
+    1️⃣ 在 iPhone 的 <b>Safari</b> 里打开 <b>ios-html-viewer.netlify.app</b>；<br>
+    2️⃣ 上传本文件（CRA_Motor_Vehicle_Daily_Logbook_Enhanced.html），所有按钮即可正常使用；<br>
+    3️⃣ 可把 Safari 页面<b>添加到主屏幕</b>，以后从图标进入记账（断网也能记，数据保存在本机 Safari）。<br>
+    <span style="font-size:12px;color:#8E8E93;">看到这条提示 = 脚本没运行；正常打开时这条提示会自动消失。</span>
+  </div>
+
+  <!-- CRA Official Print Header -->
+  <div class="cra-header">
+    <h2>CRA Motor Vehicle Daily Logbook</h2>
+    <p>Driver / Taxpayer Name: <span id="printDriverName">________________</span> | Phone: <span id="printPhone">________________</span> | Vehicle: <span id="printVehicle">________________</span></p>
+    <p>Tax Year: <span id="printTaxYear">2026</span> | Total Business Use Percentage Statement</p>
+  </div>
+
+  <header>
+    <div class="header-title">
+      <span>🚗 CRA Logbook</span>
+      <span style="font-size: 12px; font-weight: normal; color: var(--text-muted);">Uber Pro</span>
+    </div>
+    <div class="subtitle">符合加拿大税务局 (CRA) 标准的每日出车日志</div>
+  </header>
+
+  <!-- Storage warning (private mode etc.) -->
+  <div id="storageWarning" class="storage-warning" style="display:none;">
+    ⚠️ 当前浏览器无法持久保存数据（可能处于无痕/隐私模式），关闭页面后记录将丢失，请及时导出备份。
+  </div>
+
+  <!-- Month & Purpose Filter -->
+  <div class="filter-bar">
+    <span class="filter-label">📅 月份:</span>
+    <select id="monthFilter" class="month-select" onchange="filterAndRender()">
+      <!-- Generated Dynamically -->
+    </select>
+    <span class="filter-label">🏷️ 目的:</span>
+    <select id="purposeFilter" class="month-select" onchange="filterAndRender()">
+      <option value="ALL">全部目的</option>
+      <option value="Uber 运营">Uber 运营</option>
+      <option value="商业拜访">商业拜访 / 采购</option>
+      <option value="私人使用">私人使用</option>
+      <option value="其他商业">其他商业用途</option>
+    </select>
+  </div>
+
+  <!-- Dashboard Stats -->
+  <div class="stats-grid">
+    <div class="stat-card full-width">
+      <div class="stat-label">商业使用比例 (Business Rate)</div>
+      <div class="stat-value" id="statRate">0.0%</div>
+      <div class="stat-sub" id="statRateSub">用于年底计算车辆费用总抵扣比例</div>
+      <div class="rate-bar"><div class="rate-bar-fill" id="rateBarFill" style="width:0%"></div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">净商业里程 (Business)</div>
+      <div class="stat-value" id="statBusinessKm">0 km</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">总里程 (Total KM)</div>
+      <div class="stat-value" id="statTotalKm">0 km</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">加油 / 充电费用</div>
+      <div class="stat-value" id="statFuelCharging">$0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">其他运维开支</div>
+      <div class="stat-value" id="statOtherExpenses">$0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">行程次数 (Trips)</div>
+      <div class="stat-value" id="statTrips">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">出车天数 (Days)</div>
+      <div class="stat-value" id="statDays">0</div>
+    </div>
+  </div>
+
+  <!-- Entry Form Card -->
+  <div class="card">
+    <div class="card-title">📝 记录今日出车</div>
+
+    <div class="form-group row">
+      <div>
+        <label for="inputDate">日期</label>
+        <input type="date" id="inputDate" autocomplete="off" onchange="hideDoneBar()">
+      </div>
+      <div>
+        <label for="inputPurpose">行程目的</label>
+        <select id="inputPurpose" onchange="onPurposeChange()">
+          <option value="Uber 运营">Uber 运营</option>
+          <option value="商业拜访">商业拜访 / 采购</option>
+          <option value="私人使用">私人使用</option>
+          <option value="其他商业">其他商业用途</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Location Dropdowns with Custom Text Inputs -->
+    <div class="form-group row">
+      <div>
+        <label for="inputOrigin">起始点 (Origin)</label>
+        <select id="inputOrigin" onchange="checkCustomLocation('Origin'); hideDoneBar()">
+          <!-- 地点选项由 JS 动态生成（50 个大温地点 + 自定义入口），见 buildLocationOptions() -->
+        </select>
+        <input type="text" id="customOriginText" class="custom-address-input" placeholder="输入具体起始门牌/路名" autocomplete="off">
+      </div>
+
+      <div>
+        <label for="inputDest">目的地 (Destination)</label>
+        <select id="inputDest" onchange="checkCustomLocation('Dest'); hideDoneBar()">
+          <!-- 地点选项由 JS 动态生成（50 个大温地点 + 自定义入口），见 buildLocationOptions() -->
+        </select>
+        <input type="text" id="customDestText" class="custom-address-input" placeholder="输入具体目的门牌/路名" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="form-group row">
+      <div>
+        <label for="inputOdoStart">起始里程表 (Odo Start)</label>
+        <input type="number" id="inputOdoStart" inputmode="decimal" min="0" step="0.1" placeholder="0" autocomplete="off" enterkeyhint="done" oninput="autoCalcKm()">
+      </div>
+      <div>
+        <label for="inputOdoEnd">结束里程表 (Odo End)</label>
+        <input type="number" id="inputOdoEnd" inputmode="decimal" min="0" step="0.1" placeholder="0" autocomplete="off" enterkeyhint="done" oninput="autoCalcKm()">
+      </div>
+    </div>
+    <div class="odo-hint" id="odoHint"></div>
+
+    <!-- Uber Specific Personal KM Breakdown -->
+    <div class="uber-section" id="uberSection">
+      <label for="inputUberPersonalKm" style="color: var(--primary);">其中: 私人里程 (KM)（默认 3%，可修改）</label>
+      <input type="number" id="inputUberPersonalKm" inputmode="decimal" min="0" step="0.1" placeholder="自动按总里程 3% 计算，可手动修改" autocomplete="off" enterkeyhint="done" oninput="onUberPersonalInput()">
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+        * 默认扣除总里程的 3% 作为私人里程（净商业里程 = 97%）；如实际有偏差可手动修改。CRA 规定：即使全天接单，中间插入的纯个人行程必须扣除。
+      </div>
+    </div>
+
+    <div class="form-group row" style="background: var(--bg); padding: 8px; border-radius: 8px;">
+      <div>
+        <label>总行驶里程</label>
+        <div id="calcTotalKm" style="font-weight: 700; font-size: 16px;">0 km</div>
+      </div>
+      <div>
+        <label>计入净商业里程</label>
+        <div id="calcNetBusinessKm" style="font-weight: 700; font-size: 16px; color: var(--primary);">0 km</div>
+      </div>
+    </div>
+
+    <!-- Dynamic Expense Section -->
+    <div class="form-group" style="margin-top: 14px;">
+      <label>今日车辆相关开支 (Expenses)</label>
+      <div id="expenseContainer" class="expense-list">
+        <!-- Expenses dynamically added here -->
+      </div>
+      <button type="button" id="btnAddExpense" class="btn btn-secondary" onclick="addExpenseRow()">+ 添加开支明细 (充电/加油/停车等)</button>
+    </div>
+
+    <button type="button" id="btnSaveEntry" class="btn" style="margin-top: 16px;" onclick="saveEntry()">保存今日记录</button>
+    <button type="button" id="btnCancelEdit" class="btn btn-secondary" style="display: none;" onclick="cancelEdit()">取消编辑</button>
+  </div>
+
+  <!-- Settings Card -->
+  <div class="card">
+    <div class="card-title" style="cursor: pointer; margin-bottom: 0;" onclick="toggleSettings()">
+      ⚙️ 司机 / 车辆信息 <span style="font-size: 12px; font-weight: 400; color: var(--text-muted);">(打印 CRA 报告用)</span>
+      <span class="settings-arrow" id="settingsArrow">▾</span>
+    </div>
+    <div id="settingsBody" class="settings-body" style="margin-top: 14px;">
+      <div class="form-group row">
+        <div>
+          <label for="setDriverName">司机 / 纳税人姓名</label>
+          <input id="setDriverName" value="TIAN BAO DONG" autocomplete="off" oninput="saveSettings()">
+        </div>
+        <div>
+          <label for="setPhone">电话 (Phone)</label>
+          <input id="setPhone" value="7789858998" inputmode="tel" autocomplete="off" oninput="saveSettings()">
+        </div>
+      </div>
+      <div class="form-group row">
+        <div>
+          <label for="setVehicle">车辆信息</label>
+          <input id="setVehicle" placeholder="例如: 2023 Toyota Prius" autocomplete="off" oninput="saveSettings()">
+        </div>
+        <div>
+          <label for="setTaxYear">税务年度 (Tax Year)</label>
+          <input id="setTaxYear" type="number" min="2000" max="2100" placeholder="2026" autocomplete="off" oninput="saveSettings()">
+        </div>
+      </div>
+      <div class="form-group">
+        <div>
+          <label for="setDefaultOrigin">默认起始点</label>
+          <select id="setDefaultOrigin" onchange="onDefaultOriginChange()">
+            <!-- 地点选项由 JS 动态生成（与起始点下拉共用同一份 50 地点清单） -->
+          </select>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);">信息自动保存，将显示在打印报告的 CRA 抬头与签名区。</div>
+    </div>
+  </div>
+
+  <!-- Log Entries List -->
+  <div style="font-weight: 700; font-size: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+    <span>📋 历史日志记录</span>
+    <span id="recordCount" style="font-size: 12px; color: var(--text-muted); font-weight: normal;">共 0 条</span>
+  </div>
+
+  <div id="logList">
+    <!-- Log cards injected here -->
+  </div>
+
+  <!-- Print Summary (only shown when printing) -->
+  <div class="print-summary" id="printSummary"></div>
+
+  <!-- Action Bar / Export -->
+  <div class="action-bar">
+    <div class="btn-group">
+      <button type="button" id="btnExportCSV" class="btn btn-outline" onclick="exportCSV()">📥 导出 CSV (Excel)</button>
+      <button type="button" id="btnImportCSV" class="btn btn-outline" onclick="document.getElementById('csvFileInput').click()">📤 导入 CSV</button>
+      <input type="file" id="csvFileInput" style="display: none;" accept=".csv" onchange="importCSV(event)">
+    </div>
+    <div class="btn-group">
+      <button type="button" id="btnExportJSON" class="btn btn-outline" onclick="exportJSON()">💾 备份数据 (JSON)</button>
+      <button type="button" id="btnImportJSON" class="btn btn-outline" onclick="document.getElementById('jsonFileInput').click()">📂 恢复数据 (JSON)</button>
+      <input type="file" id="jsonFileInput" style="display: none;" accept=".json" onchange="importJSON(event)">
+    </div>
+    <button type="button" id="btnPrintPDF" class="btn btn-outline" style="background: #FFF; border-color: #000;" onclick="window.print()">🖨️ 打印 / 另存为 CRA PDF 报告</button>
+    <button type="button" id="btnClearAll" class="btn btn-outline btn-danger-outline" onclick="clearAllData()">🗑️ 清空全部记录</button>
+  </div>
+
+  <!-- iPhone setup guide (static: readable even when JS is disabled) -->
+  <div class="card">
+    <div class="card-title">📱 iPhone 安装与使用</div>
+    <ul style="font-size: 13px; line-height: 1.9; padding-left: 18px; margin-top: 6px;">
+      <li><b>不要</b>在"文件"App 里直接点开记账——那是预览模式，按钮点不动。</li>
+      <li>在 iPhone 的 <b>Safari</b> 里打开 <b>ios-html-viewer.netlify.app</b>，上传本文件后即可完整使用（免费、无需安装 App）。</li>
+      <li>可把 Safari 页面<b>添加到主屏幕</b>，当 App 图标用；<b>固定只用这一个入口</b>记账（数据存在该入口的 Safari 本地，换入口数据不互通）。</li>
+      <li>记账本身<b>不需要联网</b>；只有第一次打开 viewer 页面需要加载那一下要联网。</li>
+      <li>每月/每季度点一次 <b>💾 备份数据 (JSON)</b> 存到"文件"或发给自己，防止换手机或清数据丢失。</li>
+      <li>年底报税：选好月份 → <b>🖨️ 打印 / 另存为 CRA PDF 报告</b>，可直接存档或交给会计师。</li>
+    </ul>
+  </div>
+
+  <!-- Help -->
+  <div class="card help-card">
+    <div class="card-title" style="cursor: pointer; margin-bottom: 0;" onclick="toggleHelp()">
+      ❓ 使用说明 / CRA 要点
+      <span class="settings-arrow" id="helpArrow">▾</span>
+    </div>
+    <div id="helpBody" style="margin-top: 14px;">
+      <ul>
+        <li>CRA 要求逐次记录每一段行程；私人行程不参与商业比例计算。</li>
+        <li>即使全天接 Uber 单，中间插入的纯个人行程也必须从商业里程中扣除；「私人里程」默认按总里程 3% 自动填入（可手动改），净商业里程即为 97%。</li>
+        <li>数据保存在本浏览器 (localStorage)，换设备或清缓存前请先「备份数据 (JSON)」。</li>
+        <li>打印 / 另存为 PDF 时会自动生成 CRA 抬头 + 区间里程费用汇总表，可直接存档或提交。</li>
+        <li>支持对已有记录「编辑」「复制」，并可用 CSV 与 Excel 互通。</li>
+        <li>iPhone 上输入里程/金额时，屏幕底部会出现「完成」按钮用于收起键盘；点选下拉框后会自动收起。</li>
+        <li>若点按钮没反应，通常是键盘还开着：先点「完成」收起键盘，再点按钮即可。</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- iOS keyboard dismiss bar -->
+  <div class="ios-done-bar" id="iosDoneBar">
+    <button type="button" id="iosDoneBtn" onclick="dismissKeyboard()">完成</button>
+  </div>
+
+  <script>
+    // ============================================================
+    // Polyfills for older iOS Safari (ES5-safe)
+    // ============================================================
+    (function() {
+      if (!String.prototype.padStart) {
+        String.prototype.padStart = function(targetLength, padString) {
+          targetLength = targetLength >> 0;
+          padString = String(padString || ' ');
+          var s = String(this);
+          if (s.length >= targetLength) return s;
+          targetLength = targetLength - s.length;
+          if (targetLength > padString.length) {
+            padString += String.prototype.repeat.call(padString, Math.ceil(targetLength / padString.length));
+          }
+          return padString.slice(0, targetLength) + s;
+        };
+      }
+      if (!String.prototype.repeat) {
+        String.prototype.repeat = function(count) {
+          return new Array((count || 0) + 1).join(this);
+        };
+      }
+      if (!String.prototype.startsWith) {
+        String.prototype.startsWith = function(search) {
+          return this.indexOf(search) === 0;
+        };
+      }
+      if (!String.prototype.trim) {
+        String.prototype.trim = function() {
+          return this.replace(/^\s+|\s+$/g, '');
+        };
+      }
+      if (!Array.prototype.includes) {
+        Array.prototype.includes = function(searchElement, fromIndex) {
+          return this.indexOf(searchElement, fromIndex) !== -1;
+        };
+      }
+      if (!Array.prototype.find) {
+        Array.prototype.find = function(predicate) {
+          for (var i = 0; i < this.length; i++) {
+            if (predicate(this[i], i, this)) return this[i];
+          }
+          return undefined;
+        };
+      }
+      if (!Array.prototype.findIndex) {
+        Array.prototype.findIndex = function(predicate) {
+          for (var i = 0; i < this.length; i++) {
+            if (predicate(this[i], i, this)) return i;
+          }
+          return -1;
+        };
+      }
+      if (typeof Object.assign !== 'function') {
+        Object.assign = function(target) {
+          for (var i = 1; i < arguments.length; i++) {
+            var src = arguments[i];
+            if (!src) continue;
+            for (var key in src) {
+              if (Object.prototype.hasOwnProperty.call(src, key)) target[key] = src[key];
+            }
+          }
+          return target;
+        };
+      }
+    })();
+
+    // ============================================================
+    // iOS detection & storage helpers
+    // ============================================================
+    var IS_IOS = (function() {
+      var ua = navigator.userAgent;
+      return /iPad|iPhone|iPod/.test(ua) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    })();
+
+    function storageGet(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+
+    function storageSet(key, value) {
+      try { localStorage.setItem(key, value); return true; } catch (e) { return false; }
+    }
+
+    function storageRemove(key) {
+      try { localStorage.removeItem(key); } catch (e) {}
+    }
+
+    function selectOptions(sel) {
+      return Array.prototype.slice.call(sel.options);
+    }
+
+    function downloadBlob(content, filename, mime) {
+      var blob = new Blob([content], { type: mime + ';charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    // iPhone Safari ignores <a download> in many cases.
+    // On iOS 15+ use the Share Sheet (save to Files / share); otherwise fall back to blob download.
+    function saveOrShare(filename, content, mime) {
+      var shared = false;
+      try {
+        if (IS_IOS && typeof navigator.canShare === 'function' && typeof navigator.share === 'function') {
+          var file = new File([content], filename, { type: mime });
+          if (navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: filename }).catch(function() {});
+            shared = true;
+          }
+        }
+      } catch (e) { shared = false; }
+      if (!shared) {
+        downloadBlob(content, filename, mime);
+      }
+    }
+
+    // ===== Data Storage (same key as original so existing data carries over) =====
+    var STORAGE_KEY = 'cra_uber_logs';
+    var SETTINGS_KEY = 'cra_uber_settings';
+    var WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    var BUSINESS_PURPOSES = ['Uber 运营', '商业拜访', '其他商业'];
+
+    // ===== 50 个大温地点（[value, 显示文字]），起终点下拉与设置中共用 =====
+    var LOCATION_GROUPS = [
+      { group: '温哥华市 (Vancouver)', items: [
+        ['Downtown Vancouver', 'Downtown (市中心)'],
+        ['Yaletown / False Creek', 'Yaletown (耶鲁镇)'],
+        ['Vancouver West / Kitsilano', 'West Side / Kitsilano (西区)'],
+        ['Vancouver East / Commercial', 'East Van / Commercial (东区)'],
+        ['UBC Campus', 'UBC (大学)'],
+        ['Granville Island', 'Granville Island (格兰维尔岛)'],
+        ['Chinatown', 'Chinatown (唐人街)'],
+        ['Broadway / VGH', 'Broadway / VGH (百老汇)'],
+        ['Kerrisdale / Oakridge', 'Kerrisdale / Oakridge'],
+        ['Hastings-Sunrise', 'Hastings-Sunrise']
+      ]},
+      { group: '列治文 & 机场 (Richmond)', items: [
+        ['Richmond Center', 'Richmond Center (列治文中心)'],
+        ['YVR Airport', 'YVR Airport (国际机场)'],
+        ['Steveston', 'Steveston (渔人码头)'],
+        ['Bridgeport', 'Bridgeport (桥港)'],
+        ['Ironwood', 'Ironwood (东列治文)'],
+        ['Richmond Oval', 'Richmond Oval (椭圆馆)']
+      ]},
+      { group: '本拿比 (Burnaby)', items: [
+        ['Metrotown', 'Metrotown (铁道镇)'],
+        ['Brentwood', 'Brentwood'],
+        ['Lougheed', 'Lougheed'],
+        ['SFU Campus', 'SFU (大学)'],
+        ['Edmonds', 'Edmonds'],
+        ['Burnaby Heights', 'Burnaby Heights (北本拿比)'],
+        ['South Burnaby', 'South Burnaby (南本拿比)']
+      ]},
+      { group: '高贵林/三联市 (Tri-Cities)', items: [
+        ['Coquitlam Center', 'Coquitlam Center (高贵林中心)'],
+        ['Port Moody', 'Port Moody (满地宝)'],
+        ['Port Coquitlam', 'Port Coquitlam (高贵林港)'],
+        ['Burquitlam', 'Burquitlam'],
+        ['Austin Heights', 'Austin Heights'],
+        ['Westwood Plateau', 'Westwood Plateau']
+      ]},
+      { group: '素里 (Surrey)', items: [
+        ['Surrey Central', 'Surrey Central (素里中心)'],
+        ['Guildford', 'Guildford'],
+        ['Fleetwood', 'Fleetwood'],
+        ['Cloverdale', 'Cloverdale'],
+        ['Newton', 'Newton (牛顿)'],
+        ['South Surrey / White Rock', 'South Surrey / White Rock (白石)'],
+        ['North Surrey / Whalley', 'North Surrey / Whalley (北素里)']
+      ]},
+      { group: '兰里 & 菲沙河谷 (Langley & Valley)', items: [
+        ['Langley', 'Langley (兰里)'],
+        ['Aldergrove', 'Aldergrove'],
+        ['Abbotsford', 'Abbotsford (阿伯茨福德)'],
+        ['Chilliwack', 'Chilliwack (奇利瓦克)']
+      ]},
+      { group: '北岸 (North Shore)', items: [
+        ['North Vancouver', 'North Van / Lonsdale (北温)'],
+        ['West Vancouver', 'West Van / Park Royal (西温)'],
+        ['Lynn Valley', 'Lynn Valley'],
+        ['Deep Cove', 'Deep Cove (深湾)']
+      ]},
+      { group: '新西敏 & 三角洲 (New West / Delta)', items: [
+        ['New Westminster', 'New Westminster (新西敏)'],
+        ['Delta / Ladner', 'Delta / Ladner (三角洲)'],
+        ['Tsawwassen Ferry', 'Tsawwassen Ferry (渡轮码头)'],
+        ['North Delta', 'North Delta (北三角洲)']
+      ]},
+      { group: '枫树岭 (Maple Ridge)', items: [
+        ['Maple Ridge', 'Maple Ridge (枫树岭)'],
+        ['Pitt Meadows', 'Pitt Meadows (匹特草原)']
+      ]}
+    ];
+
+    function buildLocationOptions() {
+      function fill(selectId, specials, selectedValue, customTextId) {
+        var sel = document.getElementById(selectId);
+        if (!sel) return;
+        var html = '';
+        specials.forEach(function(s) {
+          html += '<option value="' + s[0] + '"' + (s[0] === selectedValue ? ' selected' : '') + '>' + s[1] + '</option>';
+        });
+        LOCATION_GROUPS.forEach(function(g) {
+          html += '<optgroup label="' + g.group + '">';
+          g.items.forEach(function(it) {
+            html += '<option value="' + it[0] + '"' + (it[0] === selectedValue ? ' selected' : '') + '>' + it[1] + '</option>';
+          });
+          html += '</optgroup>';
+        });
+        sel.innerHTML = html;
+        // 默认起始点曾设为"自定义"时，直接展开手动输入框（不抢焦点）
+        if (selectedValue === 'CUSTOM' && customTextId) {
+          var t = document.getElementById(customTextId);
+          if (t) t.style.display = 'block';
+        }
+      }
+      var defOrigin = settings.defaultOrigin || 'Home (家)';
+      fill('inputOrigin', [['Home (家)', '🏡 Home (家)'], ['CUSTOM', '✍️ 自定义地址 (手动输入)']], defOrigin, 'customOriginText');
+      fill('inputDest', [['Greater Vancouver Area', '🌐 大温巡回/多区域 (GVA)'], ['Home (家)', '🏡 Home (家)'], ['CUSTOM', '✍️ 自定义地址 (手动输入)']], 'Greater Vancouver Area', 'customDestText');
+      fill('setDefaultOrigin', [['Home (家)', '🏡 Home (家)']], defOrigin, null);
+    }
+
+    var logs = [];
+    var settings = {};
+    var editingId = null;
+    // true = 用户已手动修改过"私人里程"输入框，停止自动按 3% 填充
+    var uberPersonalManual = false;
+
+    try {
+      logs = JSON.parse(storageGet(STORAGE_KEY) || '[]');
+      if (!Array.isArray(logs)) logs = [];
+    } catch (e) { logs = []; }
+    try {
+      settings = JSON.parse(storageGet(SETTINGS_KEY) || '{}');
+      if (typeof settings !== 'object' || settings === null) settings = {};
+    } catch (e) { settings = {}; }
+    // 用户确认的默认值（2026-10-02）：只在从未保存过时填充，不覆盖已有保存值
+    if (!settings.driverName) settings.driverName = 'TIAN BAO DONG';
+    if (!settings.phone) settings.phone = '7789858998';
+    if (!settings.taxYear) settings.taxYear = String(new Date().getFullYear());
+
+    // Check storage availability (private browsing etc.)
+    (function() {
+      try {
+        localStorage.setItem('__cra_probe__', '1');
+        localStorage.removeItem('__cra_probe__');
+      } catch (e) {
+        var w = document.getElementById('storageWarning');
+        if (w) w.style.display = 'block';
+      }
+    })();
+
+    // ===== iOS keyboard "Done" bar (keyboard inputs ONLY) =====
+    function isKeyboardInput(el) {
+      if (!el || el.tagName !== 'INPUT') return false;
+      var t = el.type;
+      return t !== 'date' && t !== 'time' && t !== 'month' && t !== 'week' &&
+             t !== 'datetime-local' && t !== 'checkbox' && t !== 'radio' &&
+             t !== 'file' && t !== 'range' && t !== 'color' && t !== 'hidden';
+    }
+
+    function showDoneBar() {
+      var b = document.getElementById('iosDoneBar');
+      if (b) b.style.display = 'block';
+    }
+
+    function hideDoneBar() {
+      var b = document.getElementById('iosDoneBar');
+      if (b) b.style.display = 'none';
+    }
+
+    function dismissKeyboard() {
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+      hideDoneBar();
+    }
+
+    if (IS_IOS) {
+      document.addEventListener('focusin', function(e) {
+        if (isKeyboardInput(e.target)) showDoneBar();
+      });
+      document.addEventListener('focusout', function() {
+        setTimeout(function() {
+          if (!isKeyboardInput(document.activeElement)) hideDoneBar();
+        }, 200);
+      });
+      // pickers (select / date) close without blur on iOS - hide the bar then
+      document.addEventListener('change', function(e) {
+        var t = e.target;
+        if (t && (t.tagName === 'SELECT' || t.type === 'date')) {
+          setTimeout(hideDoneBar, 100);
+        }
+      });
+      // tapping anywhere outside the bar hides it (so it can never block buttons)
+      document.addEventListener('touchend', function(e) {
+        var bar = document.getElementById('iosDoneBar');
+        if (bar && bar.style.display === 'block' && !bar.contains(e.target)) {
+          setTimeout(hideDoneBar, 250);
+        }
+      });
+    }
+
+    // Enter key on inputs = done (blur)
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && document.activeElement && document.activeElement.tagName === 'INPUT') {
+        document.activeElement.blur();
+        e.preventDefault();
+      }
+    });
+
+    // ===== Utilities =====
+    function safe(fn) {
+      try { fn(); } catch (e) { /* never let one init step break the rest */ }
+    }
+
+    function todayStr() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function weekday(dateStr) {
+      var d = new Date(dateStr + 'T00:00:00');
+      return WEEKDAYS[d.getDay()] || '';
+    }
+
+    function setTodayDate() {
+      var input = document.getElementById('inputDate');
+      try {
+        input.valueAsDate = new Date();
+      } catch (e) {}
+      if (!input.value) {
+        input.value = todayStr();
+      }
+    }
+
+    function checkCustomLocation(type) {
+      var select = document.getElementById(type === 'Origin' ? 'inputOrigin' : 'inputDest');
+      var input = document.getElementById(type === 'Origin' ? 'customOriginText' : 'customDestText');
+      if (select.value === 'CUSTOM') {
+        input.style.display = 'block';
+        setTimeout(function() { try { input.focus(); } catch (e) {} }, 100);
+      } else {
+        input.style.display = 'none';
+        input.value = '';
+      }
+    }
+
+    // Auto-fill Odo Start from the latest record's Odo End
+    function setSuggestedOdoStart() {
+      if (editingId !== null) return;
+      if (logs.length > 0) {
+        var sorted = logs.slice().sort(function(a, b) { return (new Date(b.date) - new Date(a.date)) || (b.id - a.id); });
+        if (sorted[0].odoEnd) {
+          document.getElementById('inputOdoStart').value = sorted[0].odoEnd;
+        }
+      }
+    }
+
+    function toggleUberOptions() {
+      var purpose = document.getElementById('inputPurpose').value;
+      var uberSec = document.getElementById('uberSection');
+      if (purpose === 'Uber 运营') {
+        uberSec.style.display = 'block';
+      } else {
+        uberSec.style.display = 'none';
+        document.getElementById('inputUberPersonalKm').value = '';
+      }
+      autoCalcKm();
+    }
+
+    // 用户切换"行程目的"时：切到 Uber 运营则恢复 3% 自动默认（全新起算）
+    function onPurposeChange() {
+      if (document.getElementById('inputPurpose').value === 'Uber 运营') {
+        uberPersonalManual = false;
+      }
+      toggleUberOptions();
+      hideDoneBar();
+    }
+
+    // 用户亲手改"私人里程"输入框：标记为手动，接管数值不再自动按 3% 覆盖
+    function onUberPersonalInput() {
+      uberPersonalManual = true;
+      autoCalcKm();
+    }
+
+    function autoCalcKm() {
+      var start = parseFloat(document.getElementById('inputOdoStart').value) || 0;
+      var end = parseFloat(document.getElementById('inputOdoEnd').value) || 0;
+      var purpose = document.getElementById('inputPurpose').value;
+      var uberInput = document.getElementById('inputUberPersonalKm');
+
+      var total = end > start ? end - start : 0;
+
+      // Uber 私人里程默认值 = 本次总里程 × 3%（用户一旦手动改过就不再自动覆盖）
+      var uberPersonal = parseFloat(uberInput.value) || 0;
+      if (purpose === 'Uber 运营' && !uberPersonalManual && total > 0) {
+        uberPersonal = parseFloat((total * 0.03).toFixed(1));
+        uberInput.value = uberPersonal;
+      }
+
+      var netBusiness = 0;
+
+      if (BUSINESS_PURPOSES.indexOf(purpose) !== -1) {
+        netBusiness = Math.max(0, total - uberPersonal);
+      } else {
+        netBusiness = 0;
+      }
+
+      document.getElementById('calcTotalKm').innerText = total.toFixed(1) + ' km';
+      document.getElementById('calcNetBusinessKm').innerText = netBusiness.toFixed(1) + ' km';
+
+      // Odometer sanity hint
+      var hint = document.getElementById('odoHint');
+      if (end > 0 && end <= start) {
+        hint.innerText = '⚠ 结束里程必须大于起始里程';
+        hint.className = 'odo-hint warn';
+      } else {
+        hint.innerText = '';
+        hint.className = 'odo-hint';
+      }
+    }
+
+    // ===== Expense Dynamic Rows =====
+    function addExpenseRow(type, amount) {
+      type = type || '充电费 (EV)';
+      amount = (amount === undefined || amount === null) ? '' : amount;
+      var container = document.getElementById('expenseContainer');
+      var div = document.createElement('div');
+      div.className = 'expense-item';
+      div.innerHTML =
+        '<select class="exp-type">' +
+          '<option value="充电费 (EV)"' + (type === '充电费 (EV)' ? ' selected' : '') + '>⚡ 充电费 (EV)</option>' +
+          '<option value="汽油费 (Fuel)"' + (type === '汽油费 (Fuel)' ? ' selected' : '') + '>⛽ 汽油费 (Fuel)</option>' +
+          '<option value="停车费 (Parking)"' + (type === '停车费 (Parking)' ? ' selected' : '') + '>🅿️ 停车费 (Parking)</option>' +
+          '<option value="洗车费 (Car Wash)"' + (type === '洗车费 (Car Wash)' ? ' selected' : '') + '>🧼 洗车费 (Car Wash)</option>' +
+          '<option value="保养/维修 (Maintenance)"' + (type === '保养/维修 (Maintenance)' ? ' selected' : '') + '>🔧 保养维修</option>' +
+          '<option value="过路费 (Tolls)"' + (type === '过路费 (Tolls)' ? ' selected' : '') + '>🛣️ 过路/通行费</option>' +
+          '<option value="其他 (Other)"' + (type === '其他 (Other)' ? ' selected' : '') + '>📦 其他费用</option>' +
+        '</select>' +
+        '<input type="number" class="exp-amount" inputmode="decimal" min="0" step="0.01" placeholder="金额 ($)" value="' + amount + '" autocomplete="off" enterkeyhint="done">' +
+        '<button type="button" class="btn-icon" onclick="this.parentNode.remove()">✕</button>';
+
+      container.appendChild(div);
+    }
+
+    // ===== Save Entry =====
+    function saveEntry() {
+      // Dismiss mobile keyboard first so the save button / dialogs are usable
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+      hideDoneBar();
+
+      var date = document.getElementById('inputDate').value;
+      var purpose = document.getElementById('inputPurpose').value;
+
+      var originSelect = document.getElementById('inputOrigin').value;
+      var origin = originSelect === 'CUSTOM' ? (document.getElementById('customOriginText').value || '自定义地址') : originSelect;
+
+      var destSelect = document.getElementById('inputDest').value;
+      var dest = destSelect === 'CUSTOM' ? (document.getElementById('customDestText').value || '自定义地址') : destSelect;
+
+      var odoStart = parseFloat(document.getElementById('inputOdoStart').value) || 0;
+      var odoEnd = parseFloat(document.getElementById('inputOdoEnd').value) || 0;
+      var uberPersonal = parseFloat(document.getElementById('inputUberPersonalKm').value) || 0;
+
+      if (!date) {
+        alert('请选择日期。');
+        return;
+      }
+      if (odoEnd <= odoStart) {
+        alert('请检查输入的里程表读数（结束里程必须大于起始里程）。');
+        return;
+      }
+
+      // Warn when creating a duplicate-date entry
+      if (editingId === null) {
+        var dup = logs.find(function(l) { return l.date === date; });
+        if (dup && !confirm('该日期已存在一条记录（' + dup.date + '），确定仍要保存吗？')) {
+          return;
+        }
+      }
+
+      var totalKm = odoEnd - odoStart;
+      var netBusinessKm = 0;
+
+      if (BUSINESS_PURPOSES.indexOf(purpose) !== -1) {
+        netBusinessKm = Math.max(0, totalKm - uberPersonal);
+      } else {
+        netBusinessKm = 0;
+      }
+
+      // Collect Expenses
+      var expTypes = document.querySelectorAll('.exp-type');
+      var expAmounts = document.querySelectorAll('.exp-amount');
+      var expenses = [];
+
+      Array.prototype.forEach.call(expTypes, function(el, index) {
+        var amt = parseFloat(expAmounts[index].value);
+        if (amt > 0) {
+          expenses.push({ type: el.value, amount: amt });
+        }
+      });
+
+      var entry = {
+        id: editingId || Date.now(),
+        date: date,
+        purpose: purpose,
+        origin: origin,
+        dest: dest,
+        odoStart: odoStart,
+        odoEnd: odoEnd,
+        totalKm: totalKm,
+        uberPersonalKm: uberPersonal,
+        netBusinessKm: netBusinessKm,
+        expenses: expenses
+      };
+
+      if (editingId !== null) {
+        var idx = logs.findIndex(function(l) { return l.id === editingId; });
+        if (idx > -1) logs[idx] = entry;
+        editingId = null;
+      } else {
+        logs.push(entry);
+      }
+
+      storageSet(STORAGE_KEY, JSON.stringify(logs));
+
+      resetForm(odoEnd);
+      populateMonthFilter();
+      filterAndRender();
+      setSuggestedOdoStart();
+    }
+
+    function resetForm(nextOdoStart) {
+      setTodayDate();
+      document.getElementById('inputPurpose').value = 'Uber 运营';
+      document.getElementById('inputOdoStart').value = nextOdoStart !== undefined ? nextOdoStart : '';
+      document.getElementById('inputOdoEnd').value = '';
+      document.getElementById('inputUberPersonalKm').value = '';
+      uberPersonalManual = false; // 新记录：恢复 3% 自动默认
+      document.getElementById('expenseContainer').innerHTML = '';
+      addExpenseRow();
+      document.getElementById('customOriginText').value = '';
+      document.getElementById('customDestText').value = '';
+      document.getElementById('inputOrigin').value = settings.defaultOrigin || 'Home (家)';
+      document.getElementById('inputDest').value = 'Greater Vancouver Area';
+      checkCustomLocation('Origin');
+      checkCustomLocation('Dest');
+      document.getElementById('btnSaveEntry').textContent = '保存今日记录';
+      document.getElementById('btnCancelEdit').style.display = 'none';
+      autoCalcKm();
+    }
+
+    // ===== Edit / Duplicate / Delete =====
+    function loadEntryToForm(id) {
+      var l = logs.find(function(x) { return x.id === id; });
+      if (!l) return;
+      editingId = id;
+
+      document.getElementById('inputDate').value = l.date;
+      document.getElementById('inputPurpose').value = l.purpose;
+      selectLocation('inputOrigin', 'customOriginText', l.origin);
+      selectLocation('inputDest', 'customDestText', l.dest);
+      document.getElementById('inputOdoStart').value = l.odoStart;
+      document.getElementById('inputOdoEnd').value = l.odoEnd;
+      document.getElementById('inputUberPersonalKm').value = l.uberPersonalKm || '';
+      uberPersonalManual = true; // 编辑已有记录：沿用保存值，不再自动按 3% 覆盖
+
+      var container = document.getElementById('expenseContainer');
+      container.innerHTML = '';
+      if (l.expenses && l.expenses.length > 0) {
+        l.expenses.forEach(function(e) { addExpenseRow(e.type, e.amount); });
+      } else {
+        addExpenseRow();
+      }
+
+      toggleUberOptions();
+      document.getElementById('btnSaveEntry').textContent = '💾 更新记录';
+      document.getElementById('btnCancelEdit').style.display = 'block';
+      try {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (e) {
+        window.scrollTo(0, 0);
+      }
+    }
+
+    function selectLocation(selectId, textId, value) {
+      var select = document.getElementById(selectId);
+      var input = document.getElementById(textId);
+      var has = selectOptions(select).some(function(o) { return o.value === value; });
+      if (has) {
+        select.value = value;
+        input.style.display = 'none';
+        input.value = '';
+      } else {
+        select.value = 'CUSTOM';
+        input.style.display = 'block';
+        input.value = value;
+      }
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      resetForm('');
+      setSuggestedOdoStart();
+    }
+
+    function duplicateEntry(id) {
+      var src = logs.find(function(l) { return l.id === id; });
+      if (!src) return;
+      var copy = Object.assign({}, src, {
+        id: Date.now() + Math.floor(Math.random() * 10000),
+        date: document.getElementById('inputDate').value || src.date
+      });
+      logs.push(copy);
+      storageSet(STORAGE_KEY, JSON.stringify(logs));
+      populateMonthFilter();
+      filterAndRender();
+      setSuggestedOdoStart();
+    }
+
+    function deleteEntry(id) {
+      if (confirm('确定要删除这条记录吗？')) {
+        logs = logs.filter(function(l) { return l.id !== id; });
+        storageSet(STORAGE_KEY, JSON.stringify(logs));
+        if (editingId === id) cancelEdit();
+        populateMonthFilter();
+        filterAndRender();
+        setSuggestedOdoStart();
+      }
+    }
+
+    // ===== Settings =====
+    function toggleSettings() {
+      var body = document.getElementById('settingsBody');
+      var arrow = document.getElementById('settingsArrow');
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      arrow.style.transform = open ? '' : 'rotate(180deg)';
+    }
+
+    function toggleHelp() {
+      var body = document.getElementById('helpBody');
+      var arrow = document.getElementById('helpArrow');
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      arrow.style.transform = open ? '' : 'rotate(180deg)';
+    }
+
+    function saveSettings() {
+      settings.driverName = document.getElementById('setDriverName').value.trim();
+      settings.phone = document.getElementById('setPhone').value.trim();
+      settings.vehicleInfo = document.getElementById('setVehicle').value.trim();
+      settings.taxYear = document.getElementById('setTaxYear').value.trim() || String(new Date().getFullYear());
+      settings.defaultOrigin = document.getElementById('setDefaultOrigin').value;
+      storageSet(SETTINGS_KEY, JSON.stringify(settings));
+      updatePrintHeader();
+    }
+
+    function onDefaultOriginChange() {
+      saveSettings();
+      document.getElementById('inputOrigin').value = settings.defaultOrigin || 'Home (家)';
+      checkCustomLocation('Origin');
+      hideDoneBar();
+    }
+
+    function renderSettings() {
+      if (settings.driverName) document.getElementById('setDriverName').value = settings.driverName;
+      if (settings.phone) document.getElementById('setPhone').value = settings.phone;
+      if (settings.vehicleInfo) document.getElementById('setVehicle').value = settings.vehicleInfo;
+      if (settings.taxYear) document.getElementById('setTaxYear').value = settings.taxYear;
+      if (settings.defaultOrigin) {
+        var select = document.getElementById('setDefaultOrigin');
+        if (selectOptions(select).some(function(o) { return o.value === settings.defaultOrigin; })) {
+          select.value = settings.defaultOrigin;
+        }
+        var origin = document.getElementById('inputOrigin');
+        if (selectOptions(origin).some(function(o) { return o.value === settings.defaultOrigin; })) {
+          origin.value = settings.defaultOrigin;
+        }
+      }
+    }
+
+    function updatePrintHeader() {
+      document.getElementById('printDriverName').textContent = settings.driverName || '________________';
+      document.getElementById('printPhone').textContent = settings.phone || '________________';
+      document.getElementById('printVehicle').textContent = settings.vehicleInfo || '________________';
+      document.getElementById('printTaxYear').textContent = settings.taxYear || String(new Date().getFullYear());
+    }
+
+    // ===== Populate Month Selector =====
+    function populateMonthFilter() {
+      var select = document.getElementById('monthFilter');
+      var currentSelected = select.value;
+      select.innerHTML = '<option value="ALL">全部月份 (All Time)</option>';
+
+      var months = {};
+      logs.forEach(function(l) {
+        if (l.date) {
+          months[l.date.substring(0, 7)] = true;
+        }
+      });
+
+      Object.keys(months).sort().reverse().forEach(function(m) {
+        var opt = document.createElement('option');
+        opt.value = m;
+        opt.innerText = m;
+        select.appendChild(opt);
+      });
+
+      if (currentSelected && selectOptions(select).some(function(o) { return o.value === currentSelected; })) {
+        select.value = currentSelected;
+      } else if (Object.keys(months).length > 0) {
+        select.value = Object.keys(months).sort().reverse()[0];
+      }
+    }
+
+    // ===== Render Stats and List =====
+    function filterAndRender() {
+      var selectedMonth = document.getElementById('monthFilter').value;
+      var selectedPurpose = document.getElementById('purposeFilter').value;
+
+      var filteredLogs = logs.filter(function(l) {
+        if (selectedMonth !== 'ALL' && !(l.date && l.date.startsWith(selectedMonth))) return false;
+        if (selectedPurpose !== 'ALL' && l.purpose !== selectedPurpose) return false;
+        return true;
+      });
+
+      filteredLogs.sort(function(a, b) {
+        return (new Date(b.date) - new Date(a.date)) || (b.id - a.id);
+      });
+
+      var totalKmSum = 0;
+      var businessKmSum = 0;
+      var fuelChargingSum = 0;
+      var otherExpensesSum = 0;
+      var days = {};
+      var minDate = null, maxDate = null;
+
+      filteredLogs.forEach(function(l) {
+        totalKmSum += (l.totalKm || 0);
+        businessKmSum += (l.netBusinessKm || 0);
+        if (l.date) days[l.date] = true;
+        if (!minDate || l.date < minDate) minDate = l.date;
+        if (!maxDate || l.date > maxDate) maxDate = l.date;
+
+        if (l.expenses) {
+          l.expenses.forEach(function(e) {
+            if (e.type.indexOf('充电') !== -1 || e.type.indexOf('汽油') !== -1) {
+              fuelChargingSum += e.amount;
+            } else {
+              otherExpensesSum += e.amount;
+            }
+          });
+        }
+      });
+
+      var dayCount = Object.keys(days).length;
+      var rate = totalKmSum > 0 ? ((businessKmSum / totalKmSum) * 100) : 0;
+
+      document.getElementById('statRate').innerText = rate.toFixed(1) + '%';
+      document.getElementById('statRateSub').innerText = '基于 ' + filteredLogs.length + ' 次行程 · ' + dayCount + ' 个出车日';
+      document.getElementById('rateBarFill').style.width = Math.min(100, rate) + '%';
+      document.getElementById('statBusinessKm').innerText = businessKmSum.toFixed(1) + ' km';
+      document.getElementById('statTotalKm').innerText = totalKmSum.toFixed(1) + ' km';
+      document.getElementById('statFuelCharging').innerText = '$' + fuelChargingSum.toFixed(2);
+      document.getElementById('statOtherExpenses').innerText = '$' + otherExpensesSum.toFixed(2);
+      document.getElementById('statTrips').innerText = filteredLogs.length;
+      document.getElementById('statDays').innerText = dayCount;
+      document.getElementById('recordCount').innerText = '共 ' + filteredLogs.length + ' 条 · ' + dayCount + ' 天';
+
+      buildPrintSummary(filteredLogs, totalKmSum, businessKmSum, fuelChargingSum, otherExpensesSum, selectedMonth);
+
+      var container = document.getElementById('logList');
+      if (filteredLogs.length === 0) {
+        container.innerHTML = '<div class="empty-state">该筛选条件下暂无行程记录</div>';
+        return;
+      }
+
+      container.innerHTML = filteredLogs.map(function(l) {
+        var expHtml = '';
+        var expTotal = 0;
+        if (l.expenses && l.expenses.length > 0) {
+          expTotal = l.expenses.reduce(function(acc, e) { return acc + e.amount; }, 0);
+          expHtml = '<div class="log-expenses"><b>费用开支:</b> ' +
+            l.expenses.map(function(e) { return e.type + ': $' + e.amount.toFixed(2); }).join(' | ') +
+            ' &nbsp;|&nbsp; <b>合计: $' + expTotal.toFixed(2) + '</b></div>';
+        }
+
+        return (
+          '<div class="log-item">' +
+            '<div class="log-header">' +
+              '<span class="log-date">📅 ' + l.date + ' ' + weekday(l.date) + '</span>' +
+              '<span class="log-purpose">' + l.purpose + '</span>' +
+            '</div>' +
+            '<div class="log-details">' +
+              '<div><span>起点:</span> ' + l.origin + '</div>' +
+              '<div><span>终点:</span> ' + l.dest + '</div>' +
+              '<div><span>表读数:</span> ' + l.odoStart + ' ➔ ' + l.odoEnd + '</div>' +
+              '<div><span>总里程:</span> ' + l.totalKm.toFixed(1) + ' km</div>' +
+              '<div><span>Uber内个人:</span> ' + (l.uberPersonalKm || 0) + ' km</div>' +
+              '<div><span style="color:var(--primary); font-weight:bold;">净商业里程:</span> <b>' + l.netBusinessKm.toFixed(1) + ' km</b></div>' +
+            '</div>' +
+            expHtml +
+            '<div class="log-actions">' +
+              '<button type="button" class="btn-sm" onclick="loadEntryToForm(' + l.id + ')">✏️ 编辑</button>' +
+              '<button type="button" class="btn-sm" onclick="duplicateEntry(' + l.id + ')">📋 复制</button>' +
+              '<button type="button" class="btn-delete" onclick="deleteEntry(' + l.id + ')">删除</button>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function buildPrintSummary(filteredLogs, totalKmSum, businessKmSum, fuelChargingSum, otherExpensesSum, selectedMonth) {
+      var periodLabel = selectedMonth === 'ALL' ? '全部时间 (All Time)' : selectedMonth;
+      var days = {};
+      filteredLogs.forEach(function(l) { if (l.date) days[l.date] = true; });
+      var dayCount = Object.keys(days).length;
+      var rate = totalKmSum > 0 ? ((businessKmSum / totalKmSum) * 100).toFixed(1) : '0.0';
+
+      // First / last odometer readings within the period
+      var openingOdo = '', closingOdo = '';
+      if (filteredLogs.length > 0) {
+        var minDate = filteredLogs[0].date, maxDate = filteredLogs[0].date;
+        filteredLogs.forEach(function(l) {
+          if (l.date < minDate) minDate = l.date;
+          if (l.date > maxDate) maxDate = l.date;
+        });
+        var first = filteredLogs.filter(function(l) { return l.date === minDate; }).sort(function(a, b) { return a.id - b.id; })[0];
+        var last = filteredLogs.filter(function(l) { return l.date === maxDate; }).sort(function(a, b) { return a.id - b.id; }).pop();
+        openingOdo = first ? first.odoStart : '';
+        closingOdo = last ? last.odoEnd : '';
+      }
+
+      document.getElementById('printSummary').innerHTML =
+        '<h3>🚗 里程与费用汇总 (Summary)</h3>' +
+        '<table>' +
+        '<tr><td>统计区间 (Period)</td><td>' + periodLabel + '</td></tr>' +
+        '<tr><td>行程次数 / 出车天数</td><td>' + filteredLogs.length + ' 次 / ' + dayCount + ' 天</td></tr>' +
+        '<tr><td>期初里程表读数 (Opening Odometer)</td><td>' + (openingOdo === '' ? '-' : openingOdo) + ' km</td></tr>' +
+        '<tr><td>期末里程表读数 (Closing Odometer)</td><td>' + (closingOdo === '' ? '-' : closingOdo) + ' km</td></tr>' +
+        '<tr><td>总行驶里程 (Total KM)</td><td>' + totalKmSum.toFixed(1) + ' km</td></tr>' +
+        '<tr><td>净商业里程 (Business KM)</td><td>' + businessKmSum.toFixed(1) + ' km</td></tr>' +
+        '<tr><td><b>商业使用比例 (Business Use %)</b></td><td><b>' + rate + '%</b></td></tr>' +
+        '<tr><td>加油 / 充电费用</td><td>$' + fuelChargingSum.toFixed(2) + '</td></tr>' +
+        '<tr><td>其他车辆开支</td><td>$' + otherExpensesSum.toFixed(2) + '</td></tr>' +
+        '<tr><td>费用合计 (Total Expenses)</td><td>$' + (fuelChargingSum + otherExpensesSum).toFixed(2) + '</td></tr>' +
+        '</table>' +
+        '<div class="statement">本人声明：以上车辆里程及费用记录真实、准确。I declare that the above vehicle log and expense records are true and accurate.</div>' +
+        '<div class="sig"><span>签名 Signature</span><span>日期 Date</span></div>';
+    }
+
+    // ===== CSV Export =====
+    function exportCSV() {
+      if (logs.length === 0) {
+        alert('暂无数据可导出。');
+        return;
+      }
+
+      var csv = 'Date,Purpose,Origin,Destination,Odometer Start,Odometer End,Total KM,Uber Personal KM,Net Business KM,Expenses Detail,Total Expense Amount\n';
+
+      logs.forEach(function(l) {
+        var expDetail = '';
+        var expTotal = 0;
+        if (l.expenses) {
+          expDetail = l.expenses.map(function(e) { return e.type + ':$' + e.amount; }).join('; ');
+          expTotal = l.expenses.reduce(function(acc, curr) { return acc + curr.amount; }, 0);
+        }
+
+        csv += '"' + l.date + '","' + l.purpose + '","' + l.origin + '","' + l.dest + '",' + l.odoStart + ',' + l.odoEnd + ',' + l.totalKm + ',' + (l.uberPersonalKm || 0) + ',' + l.netBusinessKm + ',"' + expDetail + '",' + expTotal + '\n';
+      });
+
+      // On iPhone this opens the share sheet (save to Files / share); elsewhere it downloads
+      saveOrShare('CRA_Uber_Logbook_' + todayStr() + '.csv', '\ufeff' + csv, 'text/csv');
+    }
+
+    // ===== CSV Import (fixed parsing, restores expenses & dedupes) =====
+    function parseCSVLine(line) {
+      return line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(function(c) {
+        return c.trim().replace(/^"|"$/g, '').replace(/""/g, '"');
+      });
+    }
+
+    function parseExpenses(str) {
+      var out = [];
+      if (!str) return out;
+      String(str).split(/[;|]/).forEach(function(part) {
+        var m = part.match(/^(.+?):\$?([\d.]+)$/);
+        if (m && parseFloat(m[2]) > 0) {
+          out.push({ type: m[1].trim(), amount: parseFloat(m[2]) });
+        }
+      });
+      return out;
+    }
+
+    function importCSV(e) {
+      var file = e && e.target && e.target.files ? e.target.files[0] : null;
+      if (!file) return;
+      if (e.target) e.target.value = '';
+
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        var lines = event.target.result.split('\n');
+        var count = 0;
+        var skipped = 0;
+
+        for (var i = 1; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line) continue;
+
+          var cols = parseCSVLine(line);
+          if (cols.length < 6) continue;
+
+          var date = cols[0];
+          if (!date) continue;
+
+          var odoStart = parseFloat(cols[4]) || 0;
+          var odoEnd = parseFloat(cols[5]) || 0;
+          var totalRaw = parseFloat(cols[6]);
+          var totalKm = (!isNaN(totalRaw) && totalRaw > 0) ? totalRaw : Math.max(0, odoEnd - odoStart);
+          var hasNet = cols.length >= 9 && cols[8] !== undefined && cols[8].trim() !== '';
+          var netKm;
+          if (hasNet) {
+            netKm = parseFloat(cols[8]) || 0;
+          } else {
+            netKm = (BUSINESS_PURPOSES.indexOf(cols[1] || '') !== -1) ? totalKm : 0;
+          }
+
+          // Skip exact duplicates (same date + same odometer pair)
+          var dup = logs.some(function(x) {
+            return x.date === date && Math.abs((x.odoStart || 0) - odoStart) < 0.01 && Math.abs((x.odoEnd || 0) - odoEnd) < 0.01;
+          });
+          if (dup) { skipped++; continue; }
+
+          logs.push({
+            id: Date.now() + i,
+            date: date,
+            purpose: cols[1] || '其他商业',
+            origin: cols[2] || '',
+            dest: cols[3] || '',
+            odoStart: odoStart,
+            odoEnd: odoEnd,
+            totalKm: totalKm,
+            uberPersonalKm: parseFloat(cols[7]) || 0,
+            netBusinessKm: netKm,
+            expenses: parseExpenses(cols.length >= 10 ? cols[9] : '')
+          });
+          count++;
+        }
+
+        storageSet(STORAGE_KEY, JSON.stringify(logs));
+        alert('成功导入 ' + count + ' 条记录' + (skipped > 0 ? '，跳过 ' + skipped + ' 条重复记录。' : '！'));
+        populateMonthFilter();
+        filterAndRender();
+        setSuggestedOdoStart();
+      };
+      reader.readAsText(file);
+    }
+
+    // ===== JSON Backup / Restore (full fidelity incl. expenses & settings) =====
+    function exportJSON() {
+      var data = {
+        app: 'CRA Uber Logbook',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        settings: settings,
+        logs: logs
+      };
+      saveOrShare('CRA_Logbook_Backup_' + todayStr() + '.json', JSON.stringify(data, null, 2), 'application/json');
+    }
+
+    function importJSON(e) {
+      var file = e && e.target && e.target.files ? e.target.files[0] : null;
+      if (!file) return;
+      if (e.target) e.target.value = '';
+
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          var data = JSON.parse(event.target.result);
+          if (!data || !Array.isArray(data.logs)) {
+            throw new Error('文件缺少 logs 数据');
+          }
+          if (!confirm('恢复将覆盖当前全部 ' + logs.length + ' 条记录，确定继续吗？')) return;
+
+          logs = data.logs;
+          if (data.settings && typeof data.settings === 'object') {
+            settings = data.settings;
+          }
+          storageSet(STORAGE_KEY, JSON.stringify(logs));
+          storageSet(SETTINGS_KEY, JSON.stringify(settings));
+          renderSettings();
+          updatePrintHeader();
+          populateMonthFilter();
+          filterAndRender();
+          setSuggestedOdoStart();
+          alert('恢复成功：共 ' + logs.length + ' 条记录。');
+        } catch (err) {
+          alert('JSON 文件格式无效：' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // ===== Clear All =====
+    function clearAllData() {
+      if (logs.length === 0) {
+        alert('当前没有可清空的记录。');
+        return;
+      }
+      if (!confirm('确定要清空全部 ' + logs.length + ' 条日志记录吗？此操作不可撤销！')) return;
+      if (!confirm('再次确认：清空后所有里程与费用数据将永久删除，且不会影响浏览器外任何备份。')) return;
+
+      logs = [];
+      editingId = null;
+      storageSet(STORAGE_KEY, JSON.stringify(logs));
+      resetForm('');
+      populateMonthFilter();
+      filterAndRender();
+      setSuggestedOdoStart();
+      alert('已清空全部记录。');
+    }
+
+    // ===== Init (readyState-safe: never depends on event timing) =====
+    function init() {
+      safe(buildLocationOptions);
+      safe(setTodayDate);
+      safe(setSuggestedOdoStart);
+      safe(addExpenseRow);
+      safe(renderSettings);
+      safe(updatePrintHeader);
+      safe(populateMonthFilter);
+      safe(filterAndRender);
+      // Boot succeeded: hide the "JS blocked / preview mode" banner (last step)
+      safe(function() {
+        var b = document.getElementById('jsBlockedBanner');
+        if (b) b.style.display = 'none';
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
